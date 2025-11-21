@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поликлиника — Медицинская CRM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <style>
+        /* Light Theme */
+        body { background: #f5f7fa; color: #2c3e50; transition: all 0.3s ease; }
+        .sidebar { background: #ffffff; color: #2c3e50; }
+        .tab-content { background: #ffffff; color: #2c3e50; }
+        .patient-card { background: #ffffff; color: #2c3e50; }
+        .visit-item { background: #ffffff; color: #2c3e50; }
+
+        /* Dark Theme */
+        [data-theme="dark"] body { background: #0f172a !important; color: #f1f5f9 !important; }
+        [data-theme="dark"] .sidebar { background: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+        [data-theme="dark"] .tab-content { background: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+        [data-theme="dark"] .patient-card { background: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+        [data-theme="dark"] .visit-item { background: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+        [data-theme="dark"] .form-control { background: #334155 !important; color: #f1f5f9 !important; border-color: #475569 !important; }
+
+        /* Стили для ролей */
+        .badge-admin { background: #dc3545; }
+        .badge-doctor { background: #0d6efd; }
+        .badge-nurse { background: #198754; }
+    </style>
+
+</head>
+<body>
+<nav class="navbar navbar-light px-3 mb-4 position-relative">
+    <span class="navbar-brand mb-0 h1">
+        <i class="fas fa-hospital me-2"></i>🏥 Поликлиника CRM
+    </span>
+    <div class="d-flex align-items-center">
+        <span id="userInfo" class="me-3 text-white"></span>
+        <button class="theme-switcher me-2" id="themeToggleBtn">
+            <i class="fas fa-moon" id="themeIcon"></i>
+            <span id="themeText">Темная тема</span>
+        </button>
+        <button class="btn btn-outline-light btn-sm" id="logoutBtn">
+            <i class="fas fa-sign-out-alt me-1"></i>Выйти
+        </button>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 sidebar p-4">
+            <h5 class="mb-3"><i class="fas fa-users medical-icon"></i>Пациенты</h5>
+
+            <!-- Поиск и фильтры -->
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="patientSearch" class="form-control" placeholder="Поиск по ФИО...">
+                </div>
+                <select id="visitFilter" class="form-select mt-2">
+                    <option value="all">👥 Все пациенты</option>
+                    <option value="today">📅 Сегодняшние визиты</option>
+                    <option value="sickleave">🏥 На больничном</option>
+                </select>
+            </div>
+
+            <ul id="patientsList" class="list-group mb-4"></ul>
+
+            <h6><i class="fas fa-user-plus medical-icon"></i>Добавить пациента</h6>
+            <input id="firstName" class="form-control mb-2" placeholder="Имя">
+            <input id="lastName" class="form-control mb-2" placeholder="Фамилия">
+            <input id="age" class="form-control mb-2" type="number" placeholder="Возраст">
+            <input id="address" class="form-control mb-2" placeholder="Адрес">
+            <input id="phone" class="form-control mb-2" placeholder="Телефон">
+            <button class="btn btn-success w-100 btn-medical" id="addPatientBtn">
+                <i class="fas fa-plus me-2"></i>Добавить пациента
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="col-md-9 p-4">
+            <div id="noSelection" class="text-center text-muted mt-5">
+                <i class="fas fa-user-injured fa-3x mb-3" style="color: #e3f2fd;"></i>
+                <h5>Выберите пациента из списка слева</h5>
+            </div>
+
+            <div id="patientPanel" style="display:none;">
+                <h3 id="patientName" class="mb-3"></h3>
+
+                <ul class="nav nav-tabs mb-4" id="patientTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#infoTab">
+                            <i class="fas fa-info-circle me-2"></i>Информация
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#symptomsTab">
+                            <i class="fas fa-thermometer-half me-2"></i>Симптомы
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#visitsTab">
+                            <i class="fas fa-calendar-check me-2"></i>Визиты
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#treatmentsTab">
+                            <i class="fas fa-pills me-2"></i>Лечение
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#analysisTab">
+                            <i class="fas fa-microscope me-2"></i>Анализы
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reportTab">
+                            <i class="fas fa-file-medical me-2"></i>Отчёт
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Info Tab -->
+                    <div class="tab-pane fade show active" id="infoTab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong><i class="fas fa-birthday-cake me-2"></i>Возраст:</strong> <span id="infoAge"></span></p>
+                                <p><strong><i class="fas fa-map-marker-alt me-2"></i>Адрес:</strong> <span id="infoAddress"></span></p>
+                                <p><strong><i class="fas fa-phone me-2"></i>Телефон:</strong> <span id="infoPhone"></span></p>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger mt-2 btn-medical" id="deletePatientBtn">
+                            <i class="fas fa-trash me-2"></i>Удалить пациента
+                        </button>
+                    </div>
+
+                    <!-- Symptoms Tab -->
+                    <div class="tab-pane fade" id="symptomsTab">
+                        <div id="symptomsList"></div>
+
+                        <div class="mt-4">
+                            <label class="form-label"><i class="fas fa-plus-circle me-2"></i>Добавить симптом:</label>
+                            <div class="input-group">
+                                <input type="text" id="newSymptomDesc" class="form-control" placeholder="Начните вводить симптом...">
+                                <button class="btn btn-primary btn-medical" id="addSymptomBtn">
+                                    <i class="fas fa-plus me-2"></i>Добавить
+                                </button>
+                            </div>
+                            <div id="suggestions" class="mt-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Visits Tab -->
+                    <div class="tab-pane fade" id="visitsTab">
+                        <button class="btn btn-success mb-3 btn-medical" onclick="startNewVisit()">
+                            <i class="fas fa-plus me-2"></i>Новый визит
+                        </button>
+                        <div id="visitsList"></div>
+                    </div>
+
+                    <!-- New Visit Form -->
+                    <div id="newVisitForm" style="display: none;" class="mt-3 p-4 border rounded new-visit-form">
+                        <h6><i class="fas fa-file-medical me-2"></i>📋 Новый визит</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-stethoscope me-2"></i>Тип визита:</label>
+                            <select id="visitType" class="form-select">
+                                <option value="первичный">🩺 Первичный</option>
+                                <option value="повторный">📋 Повторный</option>
+                                <option value="профилактический">🛡️ Профилактический</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-comment-medical me-2"></i>Жалобы и симптомы:</label>
+                            <textarea id="visitNotes" class="form-control" placeholder="Опишите жалобы пациента..." rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-diagnoses me-2"></i>Предварительный диагноз:</label>
+                            <input type="text" id="initialDiagnosis" class="form-control" placeholder="Введите диагноз...">
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="sickLeaveCheck" onchange="toggleSickLeaveDates()">
+                            <label class="form-check-label" for="sickLeaveCheck">
+                                <i class="fas fa-file-medical-alt me-2"></i>Выдать больничный лист
+                            </label>
+                        </div>
+
+                        <!-- Поля для дат больничного -->
+                        <div id="sickLeaveDates" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-calendar-plus me-2"></i>Начало больничного:</label>
+                                    <input type="date" id="sickLeaveStart" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-calendar-minus me-2"></i>Окончание больничного:</label>
+                                    <input type="date" id="sickLeaveEnd" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-2"></i>💡 Обычно больничный выдается на 3-15 дней в зависимости от заболевания
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button class="btn btn-primary btn-medical" onclick="createVisit()">
+                                <i class="fas fa-save me-2"></i>💾 Создать визит
+                            </button>
+                            <button class="btn btn-secondary btn-medical" onclick="cancelNewVisit()">
+                                <i class="fas fa-times me-2"></i>❌ Отмена
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Treatments Tab -->
+                    <div class="tab-pane fade" id="treatmentsTab">
+                        <div id="treatmentsList" class="ps-2"></div>
+                    </div>
+
+                    <!-- Analysis Tab -->
+                    <div class="tab-pane fade" id="analysisTab">
+                        <div id="analysisList" class="ps-2"></div>
+                    </div>
+
+                    <!-- Report Tab -->
+                    <div class="tab-pane fade" id="reportTab">
+                        <button class="btn btn-outline-primary mb-3 btn-medical" id="generateReportBtn">
+                            <i class="fas fa-file-alt me-2"></i>Сформировать отчёт
+                        </button>
+                        <pre id="reportContent" style="white-space: pre-wrap; background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #e3f2fd;"></pre>
+                        <button class="btn btn-success mt-2 btn-medical" id="downloadPdfBtn">
+                            <i class="fas fa-download me-2"></i>⬇️ Скачать PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/utils.js"></script>
+
+
+<!-- АВТОРИЗАЦИЯ И ТЕМА -->
+<script>
+    // Функция для получения цвета роли
+    function getRoleColor(role) {
+        switch(role) {
+            case 'ADMIN': return 'admin';
+            case 'DOCTOR': return 'doctor';
+            case 'NURSE': return 'nurse';
+            default: return 'secondary';
+        }
+    }
+
+    // Проверка авторизации
+    function checkAuth() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = '/login.html';
+            return null;
+        }
+
+        // Показать информацию о пользователе с цветом роли
+        const roleColor = getRoleColor(currentUser.role);
+        document.getElementById('userInfo').innerHTML =
+            `${currentUser.fullName} <span class="badge badge-${roleColor}">${currentUser.role}</span>`;
+
+        // Ограничения по ролям
+        if (currentUser.role === 'NURSE') {
+            // Медсестры могут только просматривать
+            document.getElementById('addPatientBtn').style.display = 'none';
+            document.getElementById('deletePatientBtn').style.display = 'none';
+        }
+
+        return currentUser;
+    }
+
+    // Выход
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        localStorage.removeItem('currentUser');
+        window.location.href = '/login.html';
+    });
+
+    // Theme Management Functions
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+    }
+
+    function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+
+        if (themeIcon && themeText) {
+            if (theme === 'dark') {
+                themeIcon.className = 'fas fa-sun';
+                themeText.textContent = 'Светлая тема';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeText.textContent = 'Темная тема';
+            }
+        }
+    }
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверка авторизации
+        const user = checkAuth();
+        if (!user) return;
+
+        // Инициализация темы
+        initTheme();
+
+        // Назначение обработчика для кнопки темы
+        const themeBtn = document.getElementById('themeToggleBtn');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', toggleTheme);
+        }
+
+        // Инициализация основного приложения
+        if (typeof initializeEventListeners === 'function') {
+            initializeEventListeners();
+        }
+        if (typeof loadPatients === 'function') {
+            loadPatients();
+        }
+        if (typeof initializeAutocomplete === 'function') {
+            initializeAutocomplete();
+        }
+    });
+
+    function formatDate(dateString) {
+        if (!dateString) return 'не указано';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        } catch (e) {
+            return 'неверный формат';
+        }
+    }
+
+    function formatDateTime(dateString) {
+        if (!dateString) return 'не указано';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('ru-RU');
+        } catch (e) {
+            return 'неверный формат';
+        }
+    }
+
+    function formatDateForInput(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function calculateSickLeaveDays(startDate, endDate) {
+        if (!startDate || !endDate) return 0;
+        try {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            return diffDays;
+        } catch (e) {
+            return 0;
+        }
+    }
+</script>
+
+</body>
+</html>

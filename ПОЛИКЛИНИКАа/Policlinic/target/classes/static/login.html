@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему - Поликлиника</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --admin-color: #dc3545;
+            --doctor-color: #0d6efd;
+            --nurse-color: #198754;
+        }
+        body {
+            background: linear-gradient(135deg, #1e88e5, #00897b);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #1e88e5, #00897b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .login-form {
+            padding: 40px;
+        }
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e3f2fd;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #1e88e5, #00897b);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            color: white;
+            font-weight: 500;
+        }
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            color: white;
+        }
+        .badge-admin { background: var(--admin-color); }
+        .badge-doctor { background: var(--doctor-color); }
+        .badge-nurse { background: var(--nurse-color); }
+        .is-invalid { border-color: #dc3545 !important; }
+        .is-valid { border-color: #198754 !important; }
+        .validation-feedback {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        .password-strength {
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+        .strength-weak { color: #dc3545; }
+        .strength-medium { color: #ffc107; }
+        .strength-strong { color: #198754; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="login-container">
+                <div class="login-header">
+                    <i class="fas fa-hospital fa-3x mb-3"></i>
+                    <h2>Поликлиника CRM</h2>
+                    <p class="mb-0">Система управления пациентами</p>
+                </div>
+
+                <div class="login-form">
+                    <!-- Форма входа -->
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Логин</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" placeholder="Введите логин" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" placeholder="Введите пароль" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-login w-100 mb-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти в систему
+                        </button>
+
+                        <div class="text-center">
+                            <a href="#" id="showRegister" class="text-decoration-none">Создать новый аккаунт</a>
+                        </div>
+                    </form>
+
+                    <!-- Форма регистрации -->
+                    <form id="registerForm" style="display: none;">
+                        <h5 class="mb-4">Регистрация нового пользователя</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">ФИО *</label>
+                            <input type="text" class="form-control" id="fullName" placeholder="Введите полное имя" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Логин *</label>
+                                    <input type="text" class="form-control" id="regUsername"
+                                           placeholder="Придумайте логин" required onblur="checkUsername()">
+                                    <div class="validation-feedback" id="usernameFeedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Роль *</label>
+                                    <select class="form-select" id="role" required>
+                                        <option value="">Выберите роль</option>
+                                        <option value="DOCTOR">Врач</option>
+                                        <option value="NURSE">Медсестра</option>
+                                        <option value="ADMIN">Администратор</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Пароль *</label>
+                            <input type="password" class="form-control" id="regPassword"
+                                   placeholder="Придумайте пароль (мин. 8 символов)" required
+                                   minlength="8" oninput="checkPasswordStrength()">
+                            <div class="password-strength" id="passwordStrength"></div>
+                            <div class="validation-feedback" id="passwordFeedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Подтверждение пароля *</label>
+                            <input type="password" class="form-control" id="regPasswordConfirm"
+                                   placeholder="Повторите пароль" required oninput="checkPasswordMatch()">
+                            <div class="validation-feedback" id="passwordConfirmFeedback"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email"
+                                           placeholder="email@example.com" onblur="checkEmail()">
+                                    <div class="validation-feedback" id="emailFeedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Телефон</label>
+                                    <input type="tel" class="form-control" id="phone" placeholder="+7 (XXX) XXX-XX-XX">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" style="display: none;">
+                            <label class="form-label">Специализация</label>
+                            <input type="text" class="form-control" id="specialization" value="">
+                        </div>
+
+                        <button type="submit" class="btn btn-login w-100 mb-3" id="registerBtn">
+                            <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
+                        </button>
+
+                        <div class="text-center">
+                            <a href="#" id="showLogin" class="text-decoration-none">Уже есть аккаунт? Войти</a>
+                        </div>
+                    </form>
+
+                    <!-- Тестовые аккаунты -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUser = null;
+
+    // Переключение между формами
+    document.getElementById('showRegister').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+    });
+
+    document.getElementById('showLogin').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+    });
+
+    // Проверка уникальности username
+    async function checkUsername() {
+        const username = document.getElementById('regUsername').value;
+        const feedback = document.getElementById('usernameFeedback');
+
+        if (username.length < 3) {
+            feedback.innerHTML = '<i class="fas fa-times text-danger"></i> Логин должен содержать минимум 3 символа';
+            document.getElementById('regUsername').classList.add('is-invalid');
+            document.getElementById('regUsername').classList.remove('is-valid');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/auth/check-username/${username}`);
+            const data = await response.json();
+
+            if (data.exists) {
+                feedback.innerHTML = '<i class="fas fa-times text-danger"></i> Этот логин уже занят';
+                document.getElementById('regUsername').classList.add('is-invalid');
+                document.getElementById('regUsername').classList.remove('is-valid');
+            } else {
+                feedback.innerHTML = '<i class="fas fa-check text-success"></i> Логин доступен';
+                document.getElementById('regUsername').classList.add('is-valid');
+                document.getElementById('regUsername').classList.remove('is-invalid');
+            }
+        } catch (error) {
+            console.error('Ошибка проверки логина:', error);
+        }
+    }
+
+    // Проверка сложности пароля
+    function checkPasswordStrength() {
+        const password = document.getElementById('regPassword').value;
+        const strengthDiv = document.getElementById('passwordStrength');
+        const feedback = document.getElementById('passwordFeedback');
+
+        if (password.length === 0) {
+            strengthDiv.innerHTML = '';
+            feedback.innerHTML = '';
+            return;
+        }
+
+        let strength = 0;
+        let feedbackText = '';
+
+        // Проверяем длину
+        if (password.length >= 8) strength++;
+        else feedbackText += 'Минимум 8 символов. ';
+
+        // Проверяем наличие цифр
+        if (/\d/.test(password)) strength++;
+        else feedbackText += 'Добавьте цифры. ';
+
+        // Проверяем наличие букв в нижнем регистре
+        if (/[a-z]/.test(password)) strength++;
+        else feedbackText += 'Добавьте строчные буквы. ';
+
+        // Проверяем наличие букв в верхнем регистре
+        if (/[A-Z]/.test(password)) strength++;
+        else feedbackText += 'Добавьте заглавные буквы. ';
+
+        // Проверяем наличие специальных символов
+        if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
+        else feedbackText += 'Добавьте специальные символы (!@#$% и т.д.). ';
+
+        // Определяем уровень сложности
+        let strengthText, strengthClass;
+        if (strength <= 2) {
+            strengthText = 'Слабый пароль';
+            strengthClass = 'strength-weak';
+        } else if (strength <= 4) {
+            strengthText = 'Средний пароль';
+            strengthClass = 'strength-medium';
+        } else {
+            strengthText = 'Сильный пароль';
+            strengthClass = 'strength-strong';
+        }
+
+        strengthDiv.innerHTML = `<i class="fas fa-shield-alt me-1"></i><span class="${strengthClass}">${strengthText}</span>`;
+
+        if (feedbackText) {
+            feedback.innerHTML = `<i class="fas fa-info-circle me-1"></i>${feedbackText}`;
+        } else {
+            feedback.innerHTML = '<i class="fas fa-check text-success"></i> Пароль соответствует требованиям безопасности';
+        }
+    }
+
+    // Проверка совпадения паролей
+    function checkPasswordMatch() {
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regPasswordConfirm').value;
+        const feedback = document.getElementById('passwordConfirmFeedback');
+
+        if (confirmPassword.length === 0) {
+            feedback.innerHTML = '';
+            return;
+        }
+
+        if (password === confirmPassword) {
+            feedback.innerHTML = '<i class="fas fa-check text-success"></i> Пароли совпадают';
+            document.getElementById('regPasswordConfirm').classList.add('is-valid');
+            document.getElementById('regPasswordConfirm').classList.remove('is-invalid');
+        } else {
+            feedback.innerHTML = '<i class="fas fa-times text-danger"></i> Пароли не совпадают';
+            document.getElementById('regPasswordConfirm').classList.add('is-invalid');
+            document.getElementById('regPasswordConfirm').classList.remove('is-valid');
+        }
+    }
+
+    // Проверка уникальности email
+    async function checkEmail() {
+        const email = document.getElementById('email').value;
+        const feedback = document.getElementById('emailFeedback');
+
+        if (!email) return;
+
+        if (!isValidEmail(email)) {
+            feedback.innerHTML = '<i class="fas fa-times text-danger"></i> Неверный формат email';
+            document.getElementById('email').classList.add('is-invalid');
+            document.getElementById('email').classList.remove('is-valid');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/auth/check-email/${email}`);
+            const data = await response.json();
+
+            if (data.exists) {
+                feedback.innerHTML = '<i class="fas fa-times text-danger"></i> Этот email уже используется';
+                document.getElementById('email').classList.add('is-invalid');
+                document.getElementById('email').classList.remove('is-valid');
+            } else {
+                feedback.innerHTML = '<i class="fas fa-check text-success"></i> Email доступен';
+                document.getElementById('email').classList.add('is-valid');
+                document.getElementById('email').classList.remove('is-invalid');
+            }
+        } catch (error) {
+            console.error('Ошибка проверки email:', error);
+        }
+    }
+
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    // Вход
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                currentUser = data.user;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                window.location.href = '/';
+            } else {
+                alert(data.error || 'Ошибка входа');
+            }
+        } catch (error) {
+            alert('Ошибка соединения: ' + error.message);
+        }
+    });
+
+    // Регистрация
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const userData = {
+            username: document.getElementById('regUsername').value,
+            password: document.getElementById('regPassword').value,
+            fullName: document.getElementById('fullName').value,
+            role: document.getElementById('role').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            specialization: document.getElementById('specialization').value
+        };
+
+        // Валидация
+        if (!userData.role) {
+            alert('Пожалуйста, выберите роль');
+            return;
+        }
+
+        // Проверка сложности пароля
+        const password = userData.password;
+        if (password.length < 8) {
+            alert('Пароль должен содержать минимум 8 символов');
+            return;
+        }
+
+        // Проверка совпадения паролей
+        const confirmPassword = document.getElementById('regPasswordConfirm').value;
+        if (password !== confirmPassword) {
+            alert('Пароли не совпадают');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('Регистрация успешна! Теперь войдите в систему.');
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').reset();
+            } else {
+                alert(data.error || 'Ошибка регистрации');
+            }
+        } catch (error) {
+            alert('Ошибка соединения: ' + error.message);
+        }
+    });
+
+    // Проверка авторизации при загрузке
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        window.location.href = '/';
+    }
+</script>
+</body>
+</html>
